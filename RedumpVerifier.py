@@ -6,43 +6,40 @@ import datetime
 
 dats = os.listdir("./dat")
 read_size = 1024
-hash = hashlib.md5()
-gameVerified = False
-line_number = 0
 
 romList = list()
 romListRedumpName = list()
 romListHash = list()
 
 
-def getAllFiles(dirName):
-    files = os.listdir(dirName)
-    allFiles = list()
+def get_all_files(dir_name):
+    files = os.listdir(dir_name)
+    all_files = list()
 
     for entry in files:
-        fullpath = os.path.join(dirName, entry)
-        if os.path.isdir(fullpath):
-            allFiles = allFiles + getAllFiles(fullpath)
+        full_path = os.path.join(dir_name, entry)
+        if os.path.isdir(full_path):
+            all_files = all_files + get_all_files(full_path)
         else:
-            allFiles.append(fullpath)
+            all_files.append(full_path)
 
-    return allFiles
+    return all_files
 
 
 def verify(files):
     global romList, romListRedumpName, romListHash
     for file in files:
-        gameVerified = False
+        game_verified = False
         iso = file.replace("\"", "")
         print("\nISO: " + iso)
-        hash = hashlib.md5()
+        hasher = hashlib.md5()
         print("Calculating hash...")
         with open(iso, "rb") as f:
             data = f.read(read_size)
             while data:
-                hash.update(data)
+                hasher.update(data)
                 data = f.read(read_size)
-        hash = hash.hexdigest()
+        md5hash = hasher.hexdigest()
 
         romList.append(file)
 
@@ -53,30 +50,30 @@ def verify(files):
                 data = f.readlines()
                 for line in data:
                     line_number += 1
-                    if hash in line:
+                    if md5hash in line:
                         print("\n"
-                              + "ISO's MD5 hash: " + hash
+                              + "ISO's MD5 hash: " + md5hash
                               + "\n"
                               + "Game Verified, ISO's MD5 matches Redump hash"
                               )
                         name_line = line_number
                         while "<description>" not in data[name_line]:
                             name_line -= 1
-                        gameName = data[name_line]\
+                        game_name = data[name_line]\
                             .replace("<description>", "")\
                             .replace("</description>", "")\
                             .replace("\t", "")
-                        print("Redump game name: " + gameName
+                        print("Redump game name: " + game_name
                               + "\n"
                               + "----------------------------------------")
-                        gameVerified = True
+                        game_verified = True
 
-            if gameVerified:
-                romListRedumpName.append(gameName)
+            if game_verified:
+                romListRedumpName.append(game_name)
                 break
 
-        if not gameVerified:
-            print("ISO's MD5: " + hash
+        if not game_verified:
+            print("ISO's MD5: " + md5hash
                   + "\n"
                   + "ISO's MD5 doesn't match any Redump hash"
                   + "\n"
@@ -85,7 +82,7 @@ def verify(files):
                   )
             romListRedumpName.append("Not verified")
 
-        romListHash.append(hash)
+        romListHash.append(md5hash)
 
 
 # --------------------------------------------------------------------------- #
@@ -105,7 +102,7 @@ if (int(str(datetime.date.today()).split("-")[1]) >
     else:
         pass
 
-
+# check provided arguments #
 if len(sys.argv) > 1:
     for i in sys.argv[1:]:
         if os.path.isfile(i.replace("\"", "")):  # if input is a file
@@ -115,7 +112,7 @@ if len(sys.argv) > 1:
 
         elif os.path.isdir(i.replace("\"", "")):  # if input is a folder
             inputFolder = i.replace("\"", "")
-            inputFiles = getAllFiles(inputFolder)
+            inputFiles = get_all_files(inputFolder)
             verify(inputFiles)
 
         else:
@@ -154,7 +151,7 @@ else:
 
         elif os.path.isdir(i.replace("\"", "")):  # if input is a folder
             inputFolder = i.replace("\"", "")
-            inputFiles = getAllFiles(inputFolder)
+            inputFiles = get_all_files(inputFolder)
             verify(inputFiles)
 
         else:
