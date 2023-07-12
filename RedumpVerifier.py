@@ -11,6 +11,10 @@ romListRedumpName = list()
 romListHash = list()
 
 
+def prepare_path(name):
+    return name.replace("\"", "").replace("'", "").strip()
+
+
 def get_all_files(dir_name):
     files = os.listdir(dir_name)
     all_files = list()
@@ -109,32 +113,10 @@ if (int(str(datetime.date.today()).split("-")[1]) >
     else:
         pass
 
-# check provided arguments #
+# Get file/folder list #
+input_list = list()
 if len(sys.argv) > 1:
-    for i in sys.argv[1:]:
-        if os.path.isfile(i.replace("\"", "")):  # if input is a file
-            input_file = list()
-            input_file.append(i)
-            verify(input_file)
-
-        elif os.path.isdir(i.replace("\"", "")):  # if input is a folder
-            inputFolder = i.replace("\"", "")
-            inputFiles = get_all_files(inputFolder)
-            verify(inputFiles)
-
-        else:
-            print("Something went wrong...")
-
-    # if len(sys.argv) < 2:
-    print("\n\nSummary:\n")
-    for rom in romList:
-        print(os.path.basename(rom) + " - " +
-              romListRedumpName[romList.index(rom)])
-        print(romListHash[romList.index(rom)])
-
-    input()
-
-
+    input_list = sys.argv[1:]
 else:
     print(""
           + "============   Redump verifier - version 1.9    ==============\n"
@@ -147,28 +129,26 @@ else:
           )
 
     userInput = input("> ")
-    userInput = userInput.split("*")
+    input_list = userInput.split("*")
 
-    for i in userInput:
-        print(i)
-        if os.path.isfile(i.replace("\"", "")):  # if input is a file
-            input_file = list()
-            input_file.append(i)
-            verify(input_file)
+for i in input_list:
+    path = prepare_path(i)
+    if os.path.isfile(path):  # if input is a file
+        input_file = list()
+        input_file.append(i.strip())
+        verify(input_file)
 
-        elif os.path.isdir(i.replace("\"", "")):  # if input is a folder
-            inputFolder = i.replace("\"", "")
-            inputFiles = get_all_files(inputFolder)
-            verify(inputFiles)
+    elif os.path.isdir(path):  # if input is a folder
+        inputFiles = get_all_files(path)
+        verify(inputFiles)
 
-        else:
-            print("Something went wrong...")
+    else:
+        print("Something went wrong...")
 
-    # if len(sys.argv) < 2:
-    print("\n\nSummary:\n")
-    for rom in romList:
-        print(os.path.basename(rom) + " - " +
-              romListRedumpName[romList.index(rom)])
-        print(romListHash[romList.index(rom)])
+print("\n\nSummary:\n")
+for rom in romList:
+    print(os.path.basename(rom) + " - " +
+          romListRedumpName[romList.index(rom)])
+    print(romListHash[romList.index(rom)])
 
-    input()
+input()
