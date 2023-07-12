@@ -1,9 +1,9 @@
 from difflib import SequenceMatcher
+import argparse
 import ast
 import datetime
 import hashlib
 import os
-import sys
 
 dats = os.listdir("./dat")
 read_size = 1024
@@ -27,22 +27,31 @@ def get_all_files(dir_name):
     return all_files
 
 
-def verify(files):
+def verify(files, method=1):
     global dats, romList, romListRedumpName, romListHash
+
     for file in files:
         print("\nISO: " + file)
         hasher = hashlib.md5()
         print("Calculating hash...")
+
         with open(file, "rb") as f:
             data = f.read(read_size)
             while data:
                 hasher.update(data)
                 data = f.read(read_size)
+
         md5hash = hasher.hexdigest()
 
         romList.append(file)
 
-        game_name = get_fast_match(dats, md5hash)
+        if method == 1:
+            game_name = get_best_match(dats, md5hash, os.path.basename(file))
+        elif method == 2:
+            game_name = get_fast_match(dats, md5hash)
+        else:
+            print("Problem: Unrecognised matching method")
+            return
 
         if game_name:
             romListRedumpName.append(game_name)
@@ -135,6 +144,24 @@ def prepare_path(path_string):
 
 
 # --------------------------------------------------------------------------- #
+# Set up argument parser #
+parser = argparse.ArgumentParser(
+    prog='RedumpVerifier',
+    description='Calculate md5 hashes of files and folder contents and match those to the Redump '
+                'database.'
+)
+
+parser.add_argument('paths', nargs='*',
+                    help='Paths to files or folders with contents to verify. Separated by whitespace.')
+parser.add_argument('-m', '--match-method',
+                    dest='method', action='store', type=int, choices=[1, 2], default=1, nargs=1, required=False,
+                    help="1: (default) Accurate name match; searches all dat files to find the match most similar to "
+                         "the file name.\n"
+                         "2: Fast match; searches minimal number of dat files, but file name (and even "
+                         "system) may not match for every file.")
+
+args = parser.parse_args()
+
 # Check for updates #
 with open("dat/_last_update", "r") as f:
     last_update_time = f.read()
@@ -151,22 +178,35 @@ if (int(str(datetime.date.today()).split("-")[1]) >
         pass
 
 # Get file/folder list #
-input_list = list()
-if len(sys.argv) > 1:
-    input_list = sys.argv[1:]
+if len(args.paths) > 0:
+    input_list = args.paths
+    match_method = args.method
 else:
-    print(""
-          + "============   Redump verifier - version 1.9    ==============\n"
-          + "------------       Github.com/normalgamer       --------------\n"
-          + "\n"
-          + "Drag 'n Drop your ISO or folder\n"
-          + "If you want to verify multiple items, separate them by an"
-          + "asterisk ( * )\n"
-          + "\n"
-          )
+    print("============   Redump verifier - version 1.9    ==============\n"
+          "------------       Github.com/normalgamer       --------------\n"
+          "\n"
+          "Drag 'n Drop your ISO or folder\n"
+          "If you want to verify multiple items, separate them by an"
+          "asterisk ( * )\n"
+          "\n")
 
     userInput = input("> ")
     input_list = userInput.split("*")
+
+    try:
+        match_method = int(input(
+            "\nWhich method would you like to run?\n"
+            "1: (default) Accurate name match; searches all dat files to find the match most similar to the file name."
+            "\n"
+            "2: Fast match; searches minimal number of dat files, but file name (and even system) may not match for "
+            "every file."
+            "\n\n> "))
+        if match_method not in [1, 2]:
+            print("Matching method not recognised. Using default.")
+            match_method = 1
+    except ValueError:
+        match_method = 1
+
 
 # Verify #
 for i in input_list:
@@ -174,11 +214,11 @@ for i in input_list:
     if os.path.isfile(path):  # if input is a file
         input_file = list()
         input_file.append(path)
-        verify(input_file)
+        verify(input_file, match_method)
 
     elif os.path.isdir(path):  # if input is a folder
         inputFiles = get_all_files(path)
-        verify(inputFiles)
+        verify(inputFiles, match_method)
 
     else:
         print("Something went wrong...")
