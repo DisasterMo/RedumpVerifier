@@ -1,8 +1,9 @@
-import os
-import hashlib
-import sys
-import datetime
 from difflib import SequenceMatcher
+import ast
+import datetime
+import hashlib
+import os
+import sys
 
 dats = os.listdir("./dat")
 read_size = 1024
@@ -10,10 +11,6 @@ read_size = 1024
 romList = list()
 romListRedumpName = list()
 romListHash = list()
-
-
-def prepare_path(name):
-    return name.replace("\"", "").replace("'", "").strip()
 
 
 def get_all_files(dir_name):
@@ -33,11 +30,10 @@ def get_all_files(dir_name):
 def verify(files):
     global dats, romList, romListRedumpName, romListHash
     for file in files:
-        iso = file.replace("\"", "")
-        print("\nISO: " + iso)
+        print("\nISO: " + file)
         hasher = hashlib.md5()
         print("Calculating hash...")
-        with open(iso, "rb") as f:
+        with open(file, "rb") as f:
             data = f.read(read_size)
             while data:
                 hasher.update(data)
@@ -133,6 +129,11 @@ def get_best_match(dat_files, md5hash, file_name):
     return best_name
 
 
+def prepare_path(path_string):
+    # Evaluate a raw string, removing any weird single quote escapes created by the terminal
+    return ast.literal_eval(path_string.strip().replace(r"'\''", r"\'"))
+
+
 # --------------------------------------------------------------------------- #
 # Check for updates #
 with open("dat/_last_update", "r") as f:
@@ -172,7 +173,7 @@ for i in input_list:
     path = prepare_path(i)
     if os.path.isfile(path):  # if input is a file
         input_file = list()
-        input_file.append(i.strip())
+        input_file.append(path)
         verify(input_file)
 
     elif os.path.isdir(path):  # if input is a folder
